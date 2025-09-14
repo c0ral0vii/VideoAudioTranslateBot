@@ -1,0 +1,31 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: video_bot_local_db
+    restart: always
+    env_file: .env
+    ports:
+      - 127.0.0.1:5432:5432
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASS}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: sh -c 'pg_isready -U "$$POSTGRES_USER"'
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+
+  bot:
+    build: .
+    container_name: video_bot_local
+    restart: unless-stopped
+    env_file: .env
+    command: ./scripts/entrypoint-bot.sh
+
+    depends_on:
+      postgres:
+        condition: service_healthy
